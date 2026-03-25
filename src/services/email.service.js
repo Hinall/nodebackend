@@ -1,6 +1,12 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
 import config from '../config/config.js';
 
+
+// Render sometimes blocks outbound IPv6. Force IPv4 DNS resolution for SMTP.
+if (typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+}
 
 const transporter = nodemailer.createTransport({
     // Explicit SMTP settings make behavior more consistent on hosted platforms.
@@ -17,6 +23,10 @@ const transporter = nodemailer.createTransport({
         refreshToken: config.GOOGLE_REFRESH_TOKEN
     },
     connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 20000),
+    // Force IPv4 for hostname lookup.
+    lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { ...(options || {}), family: 4 }, callback);
+    },
 });
 
 
