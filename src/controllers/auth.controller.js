@@ -10,7 +10,13 @@ import otpModel from "../models/otp.model.js";
 
 export async function register(req, res) {
 
-    const { username, email, password } = req.body;
+    const { username, email, password } = req.body || {};
+
+    if (!username || !email || !password) {
+        return res.status(400).json({
+            message: "username, email and password are required"
+        });
+    }
 
     const isAlreadyRegistered = await userModel.findOne({
         $or: [
@@ -58,7 +64,13 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+        return res.status(400).json({
+            message: "email and password are required"
+        });
+    }
 
     const user = await userModel.findOne({ email })
 
@@ -273,7 +285,15 @@ export async function logoutAll(req, res) {
 
 
 export async function verifyEmail(req, res) {
-    const { otp, email } = req.body
+    // This route is registered as GET in `auth.routes.js`, so allow query params too.
+    const otp = req.body?.otp ?? req.query?.otp;
+    const email = req.body?.email ?? req.query?.email;
+
+    if (!otp || !email) {
+        return res.status(400).json({
+            message: "otp and email are required"
+        });
+    }
 
     const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
 
