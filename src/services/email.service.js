@@ -13,12 +13,19 @@ function getResendClient() {
 }
 
 export const sendEmail = async (to, subject, text, html) => {
-  await getResendClient().emails.send({
-    from: process.env.RESEND_FROM || "onboarding@resend.dev",
+  const result = await getResendClient().emails.send({
+    from: "onboarding@resend.dev",
     to,
     subject,
     text,
     html,
+  });
+
+  // Helps debugging on Render since register is non-blocking.
+  console.log("Resend email request completed:", {
+    to,
+    subject,
+    resultId: result?.id,
   });
 };
 
