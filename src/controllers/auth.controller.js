@@ -49,7 +49,9 @@ export async function register(req, res) {
         otpHash
     })
 
-    await sendEmail(email, "OTP Verification", `Your OTP code is ${otp}`, html)
+
+    sendEmail(email, "OTP Verification", `Your OTP code is ${otp}`, html)
+        .catch((err) => console.error("Email send failed:", err));
 
     res.status(201).json({
         message: "User registered successfully",
