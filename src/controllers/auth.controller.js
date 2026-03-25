@@ -361,7 +361,7 @@ export async function forgotPassword(req, res) {
   });
 
   // create reset link
-  const resetLink = `/reset-password?token=${resetToken}&email=${email}`;
+  const resetLink = `https://nodebackend-gtr9.onrender.com/reset-password?token=${resetToken}&email=${email}`;
 
   sendEmail(
     email,
