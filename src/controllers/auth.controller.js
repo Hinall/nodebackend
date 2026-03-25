@@ -26,7 +26,7 @@ export async function register(req, res) {
     })
 
     if (isAlreadyRegistered) {
-        res.status(409).json({
+        return res.status(409).json({
             message: "Username or email already exists"
         })
     }
