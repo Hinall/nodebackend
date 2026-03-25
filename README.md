@@ -98,8 +98,8 @@ Base path: `/api/auth`
 
 ### Verify email (OTP)
 `GET /api/auth/verify-email`
-- Current controller implementation expects: `{ otp, email }` from `req.body`
-- Important: `GET` requests normally do not include a body. If verification fails from the frontend, change this endpoint to `POST /verify-email` or send `otp`/`email` via query params and update the controller accordingly.
+- Current controller implementation accepts `{ otp, email }` from either `req.body` or `req.query`
+- Recommended (frontend): call `GET /api/auth/verify-email?otp=...&email=...` (query params work with GET).
 
 ## Auth Flow (High Level)
 1. `POST /register` -> generate OTP -> send OTP email -> user remains `verified: false`

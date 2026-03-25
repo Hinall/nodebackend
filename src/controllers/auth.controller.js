@@ -6,6 +6,7 @@ import sessionModel from "../models/session.model.js";
 import { sendEmail } from "../services/email.service.js";
 import { generateOtp, getOtpHtml } from "../utils/utils.js";
 import otpModel from "../models/otp.model.js";
+import passwordResetModel from "../models/passwordReset.model.js";
 
 
 export async function register(req, res) {
@@ -327,3 +328,94 @@ export async function verifyEmail(req, res) {
         }
     })
 }
+
+// FORGOT PASSWORD
+export async function forgotPassword(req, res) {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const user = await userModel.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // generate random token
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  // expire in 10 min
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await passwordResetModel.create({
+    user: user._id,
+    tokenHash,
+    expiresAt,
+  });
+
+  // create reset link
+  const resetLink = `/reset-password?token=${resetToken}&email=${email}`;
+
+  sendEmail(
+    email,
+    "Reset Password",
+    `Click to reset password: ${resetLink}`,
+    `<a href="${resetLink}">Reset Password</a>`
+  ).catch(console.error);
+
+  return res.status(200).json({
+    message: "Password reset link sent to email",
+  });
+}
+
+
+export async function resetPassword(req, res) {
+    const { token, email, newPassword } = req.body;
+  
+    if (!token || !email || !newPassword) {
+      return res.status(400).json({
+        message: "token, email and newPassword required",
+      });
+    }
+  
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+  
+    const resetDoc = await passwordResetModel.findOne({
+      tokenHash,
+    });
+  
+    if (!resetDoc) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+  
+    if (resetDoc.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Token expired" });
+    }
+  
+    const user = await userModel.findById(resetDoc.user);
+  
+    const hashedPassword = crypto
+      .createHash("sha256")
+      .update(newPassword)
+      .digest("hex");
+  
+    user.password = hashedPassword;
+    await user.save();
+  
+    // delete token after use
+    await passwordResetModel.deleteMany({ user: user._id });
+  
+    return res.status(200).json({
+      message: "Password reset successful",
+    });
+  }
